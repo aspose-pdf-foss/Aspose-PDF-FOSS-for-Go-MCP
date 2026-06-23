@@ -26,4 +26,8 @@ func Register(server *mcp.Server) {
 		Name:        "pdf_split",
 		Description: "Split a PDF into one file per page, written to output_dir as page_001.pdf, page_002.pdf, ...",
 	}, handleSplit)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "pdf_validate",
+		Description: "Check a PDF's structural integrity (parseable and internally consistent). NOT a PDF/A or PDF/UA conformance check.",
+	}, handleValidate)
 }

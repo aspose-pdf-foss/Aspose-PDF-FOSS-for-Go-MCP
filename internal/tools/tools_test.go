@@ -198,3 +198,20 @@ func TestPDFSplit(t *testing.T) {
 		t.Fatalf("page_001.pdf missing: %v", err)
 	}
 }
+
+func TestPDFValidate(t *testing.T) {
+	cs := newTestSession(t)
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "pdf_validate",
+		Arguments: map[string]any{"input_path": "../../testdata/4pages.pdf"},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("tool error: %s", resultText(t, res))
+	}
+	if !strings.Contains(resultText(t, res), "\"valid\": true") {
+		t.Fatalf("expected valid true, got: %s", resultText(t, res))
+	}
+}

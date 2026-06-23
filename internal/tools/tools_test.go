@@ -173,3 +173,28 @@ func TestPDFMergeTooFew(t *testing.T) {
 		t.Fatal("expected an error for fewer than 2 inputs")
 	}
 }
+
+func TestPDFSplit(t *testing.T) {
+	cs := newTestSession(t)
+	dir := t.TempDir()
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name: "pdf_split",
+		Arguments: map[string]any{
+			"input_path": "../../testdata/4pages.pdf",
+			"output_dir": dir,
+		},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("tool error: %s", resultText(t, res))
+	}
+	entries, _ := os.ReadDir(dir)
+	if len(entries) != 4 {
+		t.Fatalf("expected 4 split files, got %d", len(entries))
+	}
+	if _, err := os.Stat(filepath.Join(dir, "page_001.pdf")); err != nil {
+		t.Fatalf("page_001.pdf missing: %v", err)
+	}
+}

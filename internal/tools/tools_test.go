@@ -132,3 +132,44 @@ func TestPDFRenderPage(t *testing.T) {
 		t.Fatal("output file is empty")
 	}
 }
+
+func TestPDFMerge(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "merged.pdf")
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name: "pdf_merge",
+		Arguments: map[string]any{
+			"input_paths": []any{"../../testdata/4pages.pdf", "../../testdata/Hello world.pdf"},
+			"output_path": out,
+		},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("tool error: %s", resultText(t, res))
+	}
+	if _, err := os.Stat(out); err != nil {
+		t.Fatalf("merged file not written: %v", err)
+	}
+	if !strings.Contains(resultText(t, res), "page") {
+		t.Fatalf("expected page count in result, got: %s", resultText(t, res))
+	}
+}
+
+func TestPDFMergeTooFew(t *testing.T) {
+	cs := newTestSession(t)
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name: "pdf_merge",
+		Arguments: map[string]any{
+			"input_paths": []any{"../../testdata/4pages.pdf"},
+			"output_path": filepath.Join(t.TempDir(), "x.pdf"),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if !res.IsError {
+		t.Fatal("expected an error for fewer than 2 inputs")
+	}
+}

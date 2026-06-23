@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Module path: `github.com/aspose-pdf-foss/aspose-pdf-foss-mcp`.
-- Go directive: `go 1.24`.
+- Go directive: `go 1.25.0` (forced: the official MCP SDK v1.6.1 declares `go 1.25.0`, so the module minimum cannot be lower). Toolchain 1.26 installed.
 - MCP SDK: `github.com/modelcontextprotocol/go-sdk v1.6.1` (official). Import path `github.com/modelcontextprotocol/go-sdk/mcp`.
 - Library: `github.com/aspose-pdf-foss/aspose-pdf-foss-for-go v0.3.0`, imported as `pdf "github.com/aspose-pdf-foss/aspose-pdf-foss-for-go"`. Consumed via `go get` (no `replace`).
 - Every `.go` file starts with the line `// SPDX-License-Identifier: MIT`.

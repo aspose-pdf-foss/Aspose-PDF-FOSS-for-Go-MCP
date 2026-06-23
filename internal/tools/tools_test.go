@@ -133,6 +133,29 @@ func TestPDFRenderPage(t *testing.T) {
 	}
 }
 
+func TestPDFRenderPageUnsupportedFormat(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "page1.gif")
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name: "pdf_render_page",
+		Arguments: map[string]any{
+			"input_path":  "../../testdata/4pages.pdf",
+			"page":        1,
+			"output_path": out,
+			"format":      "gif",
+		},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if !res.IsError {
+		t.Fatal("expected an error for an unsupported format")
+	}
+	if _, err := os.Stat(out); !os.IsNotExist(err) {
+		t.Fatalf("unsupported format must not leave an output file, stat err = %v", err)
+	}
+}
+
 func TestPDFMerge(t *testing.T) {
 	cs := newTestSession(t)
 	out := filepath.Join(t.TempDir(), "merged.pdf")

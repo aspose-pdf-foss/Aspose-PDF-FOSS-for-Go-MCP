@@ -41,6 +41,13 @@ func handleRender(ctx context.Context, req *mcp.CallToolRequest, args renderPara
 			format = "png"
 		}
 	}
+	// Validate the format before touching the filesystem so an unsupported
+	// value leaves no stray output file behind.
+	switch format {
+	case "jpeg", "jpg", "png":
+	default:
+		return nil, nil, fmt.Errorf("unsupported format %q (use png or jpeg)", args.Format)
+	}
 
 	f, err := os.Create(args.OutputPath)
 	if err != nil {
@@ -58,10 +65,11 @@ func handleRender(ctx context.Context, req *mcp.CallToolRequest, args renderPara
 		err = page.RenderJPEG(f, opts, quality)
 	case "png":
 		err = page.RenderPNG(f, opts)
-	default:
-		return nil, nil, fmt.Errorf("unsupported format %q (use png or jpeg)", args.Format)
 	}
 	if err != nil {
+		// Don't leave a partial/empty file behind on a failed render.
+		f.Close()
+		os.Remove(args.OutputPath)
 		return nil, nil, fmt.Errorf("render page %d: %w", args.Page, err)
 	}
 

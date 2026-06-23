@@ -64,3 +64,42 @@ func TestPDFInfo(t *testing.T) {
 		t.Fatalf("expected page_count 4 in output, got: %s", text)
 	}
 }
+
+func TestPDFExtractText(t *testing.T) {
+	cs := newTestSession(t)
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name:      "pdf_extract_text",
+		Arguments: map[string]any{"input_path": "../../testdata/Hello world.pdf"},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("tool error: %s", resultText(t, res))
+	}
+	text := resultText(t, res)
+	if !strings.Contains(strings.ToLower(text), "hello") {
+		t.Fatalf("expected extracted text to contain 'hello', got: %s", text)
+	}
+}
+
+func TestPDFExtractTextPageRange(t *testing.T) {
+	cs := newTestSession(t)
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name: "pdf_extract_text",
+		Arguments: map[string]any{
+			"input_path": "../../testdata/4pages.pdf",
+			"pages":      "2",
+		},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("tool error: %s", resultText(t, res))
+	}
+	text := resultText(t, res)
+	if strings.Count(text, "--- Page") != 1 {
+		t.Fatalf("expected exactly one page marker, got: %s", text)
+	}
+}

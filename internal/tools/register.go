@@ -14,4 +14,8 @@ func Register(server *mcp.Server) {
 		Name:        "pdf_extract_text",
 		Description: "Extract text from a PDF, one section per page. Optional page range and separator.",
 	}, handleText)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "pdf_render_page",
+		Description: "Render a single PDF page to a PNG or JPEG image file on disk.",
+	}, handleRender)
 }

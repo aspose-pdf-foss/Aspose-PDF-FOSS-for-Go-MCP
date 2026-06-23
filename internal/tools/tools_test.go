@@ -4,6 +4,8 @@ package tools_test
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -101,5 +103,32 @@ func TestPDFExtractTextPageRange(t *testing.T) {
 	text := resultText(t, res)
 	if strings.Count(text, "--- Page") != 1 {
 		t.Fatalf("expected exactly one page marker, got: %s", text)
+	}
+}
+
+func TestPDFRenderPage(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "page1.png")
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{
+		Name: "pdf_render_page",
+		Arguments: map[string]any{
+			"input_path":  "../../testdata/4pages.pdf",
+			"page":        1,
+			"output_path": out,
+			"dpi":         72,
+		},
+	})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("tool error: %s", resultText(t, res))
+	}
+	fi, err := os.Stat(out)
+	if err != nil {
+		t.Fatalf("output not written: %v", err)
+	}
+	if fi.Size() == 0 {
+		t.Fatal("output file is empty")
 	}
 }

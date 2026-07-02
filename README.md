@@ -118,6 +118,55 @@ On Windows use the `.exe` path and forward slashes or escaped back slashes:
 }
 ```
 
+## Usage
+
+Once the server is registered, just describe the task in your MCP client — it
+picks the right tool and fills in the parameters. For example:
+
+> Extract the text from `D:/reports/q2.pdf` and summarize it.
+>
+> Merge `intro.pdf`, `body.pdf`, and `appendix.pdf` into `book.pdf`, then add a
+> diagonal "DRAFT" watermark on every page.
+>
+> Is `invoice.pdf` PDF/A-2b conformant? If not, convert it and tell me what
+> could not be fixed.
+>
+> List the form fields in `application.pdf`, fill in the name and date, and
+> flatten the result.
+>
+> Sign `contract.pdf` with the certificate in `~/keys/cert.pem` and the key in
+> `~/keys/key.pem`, reason "Approved".
+
+Tool calls the client makes under the hood look like this:
+
+```json
+{
+  "name": "pdf_watermark",
+  "arguments": {
+    "input_path": "D:/reports/book.pdf",
+    "output_path": "D:/reports/book-draft.pdf",
+    "text": "DRAFT",
+    "rotate_angle": 45
+  }
+}
+```
+
+```json
+{
+  "name": "pdf_fill_form",
+  "arguments": {
+    "input_path": "application.pdf",
+    "output_path": "application-filled.pdf",
+    "values": { "name": "Jane Doe", "agree": "On" },
+    "flatten": true
+  }
+}
+```
+
+The server reads and writes files at the paths the client supplies, so give it
+absolute paths (or paths relative to the server process's working directory)
+that the server's user account can access.
+
 ## Roadmap
 
 Possible future tools on top of library features that are already released: change password, reorder pages, add/replace images, outlines and table-of-contents generation, form-data interchange (JSON/FDF/XFDF), annotations, page labels, and tagged-PDF authoring.

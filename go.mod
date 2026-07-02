@@ -1,4 +1,4 @@
-module github.com/aspose-pdf-foss/aspose-pdf-foss-mcp
+module github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp
 
 go 1.25.0
 

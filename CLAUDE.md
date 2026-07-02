@@ -9,7 +9,7 @@ This is a **thin MCP wrapper** over the `aspose-pdf-foss-for-go` PDF library. No
 ## Module
 
 ```
-github.com/aspose-pdf-foss/aspose-pdf-foss-mcp
+github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp
 ```
 
 Go directive: `go 1.25.0` (required by the MCP SDK v1.6.1).

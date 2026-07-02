@@ -18,7 +18,7 @@ import (
 	"time"
 
 	pdf "github.com/aspose-pdf-foss/aspose-pdf-foss-for-go"
-	"github.com/aspose-pdf-foss/aspose-pdf-foss-mcp/internal/tools"
+	"github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp/internal/tools"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 

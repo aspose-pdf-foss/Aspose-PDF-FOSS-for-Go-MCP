@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-// Command aspose-pdf-foss-mcp is a stdio MCP server wrapping the
+// Command aspose-pdf-foss-for-go-mcp is a stdio MCP server wrapping the
 // aspose-pdf-foss-for-go PDF library.
 package main
 
@@ -8,7 +8,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/aspose-pdf-foss/aspose-pdf-foss-mcp/internal/server"
+	"github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp/internal/server"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 

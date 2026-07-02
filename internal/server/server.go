@@ -4,14 +4,14 @@
 package server
 
 import (
-	"github.com/aspose-pdf-foss/aspose-pdf-foss-mcp/internal/tools"
+	"github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp/internal/tools"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // New builds the MCP server with all tools registered.
 func New() *mcp.Server {
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    "aspose-pdf-foss-mcp",
+		Name:    "aspose-pdf-foss-for-go-mcp",
 		Version: "0.2.0",
 	}, nil)
 	tools.Register(server)

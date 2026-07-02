@@ -1,20 +1,20 @@
-# aspose-pdf-foss-mcp
+# aspose-pdf-foss-for-go-mcp
 
 A stdio MCP server that wraps the [`aspose-pdf-foss-for-go`](https://github.com/aspose-pdf-foss/aspose-pdf-foss-for-go) v0.4.0 PDF library and exposes 25 PDF tools to any MCP-compatible AI client. It speaks the Model Context Protocol over standard input/output and has no HTTP server, no daemon, and no dependencies beyond the Go standard library and the two declared modules.
 
 ## Install / Build
 
 ```bash
-go install github.com/aspose-pdf-foss/aspose-pdf-foss-mcp@latest
+go install github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp@latest
 ```
 
 or build from a checkout:
 
 ```bash
-go build -o aspose-pdf-foss-mcp .
+go build -o aspose-pdf-foss-for-go-mcp .
 ```
 
-On Windows the binary is `aspose-pdf-foss-mcp.exe`. There are no additional install steps; the server binary is self-contained.
+On Windows the binary is `aspose-pdf-foss-for-go-mcp.exe`. There are no additional install steps; the server binary is self-contained.
 
 ## Tools
 
@@ -92,7 +92,7 @@ Add the following to your MCP client's configuration (e.g. Claude Desktop `claud
 {
   "mcpServers": {
     "aspose-pdf": {
-      "command": "/absolute/path/to/aspose-pdf-foss-mcp"
+      "command": "/absolute/path/to/aspose-pdf-foss-for-go-mcp"
     }
   }
 }
@@ -104,7 +104,7 @@ On Windows use the `.exe` path and forward slashes or escaped back slashes:
 {
   "mcpServers": {
     "aspose-pdf": {
-      "command": "C:/Users/you/bin/aspose-pdf-foss-mcp.exe"
+      "command": "C:/Users/you/bin/aspose-pdf-foss-for-go-mcp.exe"
     }
   }
 }

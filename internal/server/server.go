@@ -12,7 +12,7 @@ import (
 func New() *mcp.Server {
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    "aspose-pdf-foss-mcp",
-		Version: "0.1.0",
+		Version: "0.2.0",
 	}, nil)
 	tools.Register(server)
 	return server

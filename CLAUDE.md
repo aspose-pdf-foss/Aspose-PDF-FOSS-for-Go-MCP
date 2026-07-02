@@ -36,6 +36,25 @@ One tool = one file under `internal/tools/`. The file is named after the tool wi
 | `internal/tools/merge.go` | `pdf_merge` |
 | `internal/tools/split.go` | `pdf_split` |
 | `internal/tools/validate.go` | `pdf_validate` |
+| `internal/tools/convert_pdfa.go` | `pdf_convert_pdfa` |
+| `internal/tools/sign.go` | `pdf_sign` |
+| `internal/tools/verify_signatures.go` | `pdf_verify_signatures` |
+| `internal/tools/grayscale.go` | `pdf_to_grayscale` |
+| `internal/tools/linearize.go` | `pdf_linearize` |
+| `internal/tools/nup.go` | `pdf_nup` |
+| `internal/tools/booklet.go` | `pdf_booklet` |
+| `internal/tools/encrypt.go` | `pdf_encrypt` |
+| `internal/tools/decrypt.go` | `pdf_decrypt` |
+| `internal/tools/images.go` | `pdf_extract_images` |
+| `internal/tools/form_fields.go` | `pdf_form_fields` |
+| `internal/tools/fill_form.go` | `pdf_fill_form` |
+| `internal/tools/flatten.go` | `pdf_flatten` |
+| `internal/tools/optimize.go` | `pdf_optimize` |
+| `internal/tools/rotate.go` | `pdf_rotate` |
+| `internal/tools/delete_pages.go` | `pdf_delete_pages` |
+| `internal/tools/extract_pages.go` | `pdf_extract_pages` |
+| `internal/tools/watermark.go` | `pdf_watermark` |
+| `internal/tools/search.go` | `pdf_search` |
 
 Every tool is registered in `internal/tools/register.go` via `mcp.AddTool`. Do not register tools anywhere else.
 
@@ -63,6 +82,7 @@ Every tool is registered in `internal/tools/register.go` via `mcp.AddTool`. Do n
 |------|----------------|---------|
 | `internal/tools/errors.go` | `openDocument(path, password string) (*pdf.Document, error)` | Opens a PDF, handling the encrypted-but-no-password case with an actionable error message |
 | `internal/tools/pages.go` | `parsePageRange(spec string, total int) ([]int, error)` | Parses a page range string such as `"1-3,5"` into a slice of 1-based page numbers; empty spec means all pages |
+| `internal/tools/pdfa.go` | `parsePDFALevel(level string) (pdf.PDFAFormat, error)` | Maps a level string such as `"pdfa-1b"` to the library's `PDFAFormat` constant |
 
 Do not duplicate this logic in individual tool files.
 

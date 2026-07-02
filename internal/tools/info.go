@@ -5,6 +5,7 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	pdf "github.com/aspose-pdf-foss/aspose-pdf-foss-for-go"
@@ -44,13 +45,21 @@ func handleInfo(ctx context.Context, req *mcp.CallToolRequest, args infoParams) 
 	if err != nil {
 		return nil, nil, fmt.Errorf("read info %q: %w", args.InputPath, err)
 	}
-	sizes, err := pdf.PageSizes(args.InputPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("page sizes %q: %w", args.InputPath, err)
+	pageSizes := make([]pageSizeJSON, 0, doc.PageCount())
+	for i, p := range doc.Pages() {
+		size, err := p.Size()
+		if err != nil {
+			return nil, nil, fmt.Errorf("size of page %d in %q: %w", i+1, args.InputPath, err)
+		}
+		pageSizes = append(pageSizes, pageSizeJSON{Width: size.Width, Height: size.Height})
 	}
-	pageSizes := make([]pageSizeJSON, len(sizes))
-	for i, s := range sizes {
-		pageSizes[i] = pageSizeJSON{Width: s.Width, Height: s.Height}
+	// The document is already open (possibly via a password), so probe the
+	// file itself for the encrypted flag.
+	encrypted := false
+	if args.Password != "" {
+		if _, err := pdf.Open(args.InputPath); errors.Is(err, pdf.ErrEncrypted) {
+			encrypted = true
+		}
 	}
 	out := infoResult{
 		PageCount:    doc.PageCount(),
@@ -63,7 +72,7 @@ func handleInfo(ctx context.Context, req *mcp.CallToolRequest, args infoParams) 
 		Producer:     info.Producer,
 		CreationDate: info.CreationDate,
 		ModDate:      info.ModDate,
-		Encrypted:    args.Password != "",
+		Encrypted:    encrypted,
 	}
 	data, err := json.MarshalIndent(out, "", "  ")
 	if err != nil {

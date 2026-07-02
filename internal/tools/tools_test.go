@@ -4,11 +4,20 @@ package tools_test
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	pdf "github.com/aspose-pdf-foss/aspose-pdf-foss-for-go"
 	"github.com/aspose-pdf-foss/aspose-pdf-foss-mcp/internal/tools"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -236,5 +245,431 @@ func TestPDFValidate(t *testing.T) {
 	}
 	if !strings.Contains(resultText(t, res), "\"valid\": true") {
 		t.Fatalf("expected valid true, got: %s", resultText(t, res))
+	}
+}
+
+// callOK calls a tool and fails the test on a transport or tool error.
+func callOK(t *testing.T, cs *mcp.ClientSession, name string, args map[string]any) string {
+	t.Helper()
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{Name: name, Arguments: args})
+	if err != nil {
+		t.Fatalf("CallTool %s: %v", name, err)
+	}
+	if res.IsError {
+		t.Fatalf("%s tool error: %s", name, resultText(t, res))
+	}
+	return resultText(t, res)
+}
+
+// callErr calls a tool and fails the test unless the tool reports an error.
+func callErr(t *testing.T, cs *mcp.ClientSession, name string, args map[string]any) string {
+	t.Helper()
+	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{Name: name, Arguments: args})
+	if err != nil {
+		t.Fatalf("CallTool %s: %v", name, err)
+	}
+	if !res.IsError {
+		t.Fatalf("%s: expected a tool error, got: %s", name, resultText(t, res))
+	}
+	return resultText(t, res)
+}
+
+// makeFormPDF writes a one-page PDF with a text field named "name" and a
+// checkbox named "agree", and returns its path.
+func makeFormPDF(t *testing.T) string {
+	t.Helper()
+	doc := pdf.NewDocument(612, 792)
+	if _, err := doc.Form().AddTextField(1, pdf.Rectangle{LLX: 100, LLY: 700, URX: 300, URY: 720}, "name"); err != nil {
+		t.Fatalf("AddTextField: %v", err)
+	}
+	if _, err := doc.Form().AddCheckbox(1, pdf.Rectangle{LLX: 100, LLY: 660, URX: 120, URY: 680}, "agree"); err != nil {
+		t.Fatalf("AddCheckbox: %v", err)
+	}
+	path := filepath.Join(t.TempDir(), "form.pdf")
+	if err := doc.Save(path); err != nil {
+		t.Fatalf("save form fixture: %v", err)
+	}
+	return path
+}
+
+// makeEncryptedPDF writes an AES-128-encrypted copy of Hello world.pdf with
+// user password "secret" and returns its path.
+func makeEncryptedPDF(t *testing.T) string {
+	t.Helper()
+	doc, err := pdf.Open("../../testdata/Hello world.pdf")
+	if err != nil {
+		t.Fatalf("open fixture: %v", err)
+	}
+	doc.SetEncryption(pdf.EncryptionOptions{UserPassword: "secret"})
+	path := filepath.Join(t.TempDir(), "encrypted.pdf")
+	if err := doc.Save(path); err != nil {
+		t.Fatalf("save encrypted fixture: %v", err)
+	}
+	return path
+}
+
+// makeCertAndKey writes a self-signed ECDSA P-256 certificate and its private
+// key as PEM files and returns their paths.
+func makeCertAndKey(t *testing.T) (certPath, keyPath string) {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	template := x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "MCP Test Signer"},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(24 * time.Hour),
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		BasicConstraintsValid: true,
+	}
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
+	if err != nil {
+		t.Fatalf("create certificate: %v", err)
+	}
+	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
+		t.Fatalf("marshal key: %v", err)
+	}
+	dir := t.TempDir()
+	certPath = filepath.Join(dir, "cert.pem")
+	keyPath = filepath.Join(dir, "key.pem")
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER})
+	if err := os.WriteFile(certPath, certPEM, 0o644); err != nil {
+		t.Fatalf("write cert: %v", err)
+	}
+	if err := os.WriteFile(keyPath, keyPEM, 0o600); err != nil {
+		t.Fatalf("write key: %v", err)
+	}
+	return certPath, keyPath
+}
+
+func TestPDFValidatePDFA(t *testing.T) {
+	cs := newTestSession(t)
+	text := callOK(t, cs, "pdf_validate", map[string]any{
+		"input_path": "../../testdata/4pages.pdf",
+		"profile":    "pdfa-1b",
+	})
+	if !strings.Contains(text, "\"profile\": \"pdfa-1b\"") || !strings.Contains(text, "\"issues\"") {
+		t.Fatalf("expected a pdfa-1b report, got: %s", text)
+	}
+}
+
+func TestPDFValidatePDFUA(t *testing.T) {
+	cs := newTestSession(t)
+	text := callOK(t, cs, "pdf_validate", map[string]any{
+		"input_path": "../../testdata/4pages.pdf",
+		"profile":    "pdfua",
+	})
+	if !strings.Contains(text, "\"profile\": \"pdfua\"") {
+		t.Fatalf("expected a pdfua report, got: %s", text)
+	}
+}
+
+func TestPDFValidateUnknownProfile(t *testing.T) {
+	cs := newTestSession(t)
+	callErr(t, cs, "pdf_validate", map[string]any{
+		"input_path": "../../testdata/4pages.pdf",
+		"profile":    "pdfa-9z",
+	})
+}
+
+func TestPDFConvertPDFA(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "pdfa.pdf")
+	text := callOK(t, cs, "pdf_convert_pdfa", map[string]any{
+		"input_path":  "../../testdata/Hello world.pdf",
+		"output_path": out,
+		"level":       "pdfa-1b",
+	})
+	if !strings.Contains(text, "\"level\": \"PDF/A-1B\"") {
+		t.Fatalf("expected a PDF/A-1B report, got: %s", text)
+	}
+	if _, err := os.Stat(out); err != nil {
+		t.Fatalf("output not written: %v", err)
+	}
+}
+
+func TestPDFToGrayscale(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "gray.pdf")
+	callOK(t, cs, "pdf_to_grayscale", map[string]any{
+		"input_path":  "../../testdata/PdfWithImages.pdf",
+		"output_path": out,
+	})
+	text := callOK(t, cs, "pdf_validate", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"valid\": true") {
+		t.Fatalf("grayscale output not structurally valid: %s", text)
+	}
+}
+
+func TestPDFLinearize(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "linear.pdf")
+	callOK(t, cs, "pdf_linearize", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": out,
+	})
+	text := callOK(t, cs, "pdf_validate", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"valid\": true") {
+		t.Fatalf("linearized output not structurally valid: %s", text)
+	}
+}
+
+func TestPDFNUp(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "nup.pdf")
+	callOK(t, cs, "pdf_nup", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": out,
+		"rows":        2,
+		"cols":        2,
+	})
+	text := callOK(t, cs, "pdf_info", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"page_count\": 1") {
+		t.Fatalf("expected 4 pages imposed onto 1 sheet, got: %s", text)
+	}
+}
+
+func TestPDFBooklet(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "booklet.pdf")
+	callOK(t, cs, "pdf_booklet", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": out,
+	})
+	text := callOK(t, cs, "pdf_info", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"page_count\": 2") {
+		t.Fatalf("expected 4 pages imposed as 2 spreads, got: %s", text)
+	}
+}
+
+func TestPDFEncrypt(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "locked.pdf")
+	callOK(t, cs, "pdf_encrypt", map[string]any{
+		"input_path":    "../../testdata/Hello world.pdf",
+		"output_path":   out,
+		"user_password": "secret",
+	})
+	callErr(t, cs, "pdf_info", map[string]any{"input_path": out})
+	text := callOK(t, cs, "pdf_info", map[string]any{"input_path": out, "password": "secret"})
+	if !strings.Contains(text, "\"page_count\": 1") {
+		t.Fatalf("expected the encrypted copy to open with the password, got: %s", text)
+	}
+}
+
+func TestPDFEncryptNoPasswords(t *testing.T) {
+	cs := newTestSession(t)
+	callErr(t, cs, "pdf_encrypt", map[string]any{
+		"input_path":  "../../testdata/Hello world.pdf",
+		"output_path": filepath.Join(t.TempDir(), "x.pdf"),
+	})
+}
+
+func TestPDFDecrypt(t *testing.T) {
+	cs := newTestSession(t)
+	encrypted := makeEncryptedPDF(t)
+	out := filepath.Join(t.TempDir(), "plain.pdf")
+	callOK(t, cs, "pdf_decrypt", map[string]any{
+		"input_path":  encrypted,
+		"output_path": out,
+		"password":    "secret",
+	})
+	text := callOK(t, cs, "pdf_info", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"encrypted\": false") {
+		t.Fatalf("expected decrypted output to open without a password, got: %s", text)
+	}
+}
+
+func TestPDFSignAndVerify(t *testing.T) {
+	cs := newTestSession(t)
+	certPath, keyPath := makeCertAndKey(t)
+	out := filepath.Join(t.TempDir(), "signed.pdf")
+	callOK(t, cs, "pdf_sign", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": out,
+		"cert_path":   certPath,
+		"key_path":    keyPath,
+		"reason":      "e2e test",
+	})
+	text := callOK(t, cs, "pdf_verify_signatures", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"count\": 1") || !strings.Contains(text, "\"valid\": true") {
+		t.Fatalf("expected one valid signature, got: %s", text)
+	}
+	if !strings.Contains(text, "MCP Test Signer") {
+		t.Fatalf("expected the signer certificate subject, got: %s", text)
+	}
+}
+
+func TestPDFExtractImages(t *testing.T) {
+	cs := newTestSession(t)
+	dir := filepath.Join(t.TempDir(), "images")
+	text := callOK(t, cs, "pdf_extract_images", map[string]any{
+		"input_path": "../../testdata/PdfWithImages.pdf",
+		"output_dir": dir,
+	})
+	if !strings.Contains(text, "Extracted") {
+		t.Fatalf("expected extracted images, got: %s", text)
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil || len(entries) == 0 {
+		t.Fatalf("expected image files in %s (err=%v, n=%d)", dir, err, len(entries))
+	}
+}
+
+func TestPDFFormFieldsAndFill(t *testing.T) {
+	cs := newTestSession(t)
+	form := makeFormPDF(t)
+	text := callOK(t, cs, "pdf_form_fields", map[string]any{"input_path": form})
+	if !strings.Contains(text, "\"count\": 2") || !strings.Contains(text, "\"name\": \"name\"") || !strings.Contains(text, "\"type\": \"checkbox\"") {
+		t.Fatalf("expected a text and a checkbox field, got: %s", text)
+	}
+
+	out := filepath.Join(t.TempDir(), "filled.pdf")
+	callOK(t, cs, "pdf_fill_form", map[string]any{
+		"input_path":  form,
+		"output_path": out,
+		"values":      map[string]any{"name": "Alice"},
+	})
+	text = callOK(t, cs, "pdf_form_fields", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"value\": \"Alice\"") {
+		t.Fatalf("expected the filled value to round-trip, got: %s", text)
+	}
+}
+
+func TestPDFFillFormUnknownField(t *testing.T) {
+	cs := newTestSession(t)
+	form := makeFormPDF(t)
+	text := callErr(t, cs, "pdf_fill_form", map[string]any{
+		"input_path":  form,
+		"output_path": filepath.Join(t.TempDir(), "x.pdf"),
+		"values":      map[string]any{"no_such_field": "x"},
+	})
+	if !strings.Contains(text, "no_such_field") {
+		t.Fatalf("expected the unknown field name in the error, got: %s", text)
+	}
+}
+
+func TestPDFFlatten(t *testing.T) {
+	cs := newTestSession(t)
+	form := makeFormPDF(t)
+	out := filepath.Join(t.TempDir(), "flat.pdf")
+	callOK(t, cs, "pdf_flatten", map[string]any{
+		"input_path":  form,
+		"output_path": out,
+	})
+	text := callOK(t, cs, "pdf_form_fields", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"count\": 0") {
+		t.Fatalf("expected no fields after flattening, got: %s", text)
+	}
+}
+
+func TestPDFOptimize(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "optimized.pdf")
+	text := callOK(t, cs, "pdf_optimize", map[string]any{
+		"input_path":  "../../testdata/PdfWithImages.pdf",
+		"output_path": out,
+		"max_dpi":     72,
+	})
+	if !strings.Contains(text, "\"images_optimized\"") {
+		t.Fatalf("expected an optimization report, got: %s", text)
+	}
+	if _, err := os.Stat(out); err != nil {
+		t.Fatalf("output not written: %v", err)
+	}
+}
+
+func TestPDFRotate(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "rotated.pdf")
+	callOK(t, cs, "pdf_rotate", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": out,
+		"angle":       90,
+		"pages":       "1,3",
+	})
+	text := callOK(t, cs, "pdf_info", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"page_count\": 4") {
+		t.Fatalf("expected 4 pages after rotation, got: %s", text)
+	}
+}
+
+func TestPDFRotateBadAngle(t *testing.T) {
+	cs := newTestSession(t)
+	callErr(t, cs, "pdf_rotate", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": filepath.Join(t.TempDir(), "x.pdf"),
+		"angle":       45,
+	})
+}
+
+func TestPDFDeletePages(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "deleted.pdf")
+	callOK(t, cs, "pdf_delete_pages", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": out,
+		"pages":       "1,4",
+	})
+	text := callOK(t, cs, "pdf_info", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"page_count\": 2") {
+		t.Fatalf("expected 2 remaining pages, got: %s", text)
+	}
+}
+
+func TestPDFExtractPages(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "extracted.pdf")
+	callOK(t, cs, "pdf_extract_pages", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": out,
+		"pages":       "2-3",
+	})
+	text := callOK(t, cs, "pdf_info", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"page_count\": 2") {
+		t.Fatalf("expected 2 extracted pages, got: %s", text)
+	}
+}
+
+func TestPDFWatermarkText(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "watermarked.pdf")
+	callOK(t, cs, "pdf_watermark", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": out,
+		"text":        "CONFIDENTIAL",
+	})
+	text := callOK(t, cs, "pdf_search", map[string]any{
+		"input_path": out,
+		"query":      "CONFIDENTIAL",
+	})
+	if strings.Contains(text, "\"count\": 0") {
+		t.Fatalf("expected the watermark text to be searchable, got: %s", text)
+	}
+}
+
+func TestPDFWatermarkBothSources(t *testing.T) {
+	cs := newTestSession(t)
+	callErr(t, cs, "pdf_watermark", map[string]any{
+		"input_path":  "../../testdata/4pages.pdf",
+		"output_path": filepath.Join(t.TempDir(), "x.pdf"),
+		"text":        "X",
+		"image_path":  "y.png",
+	})
+}
+
+func TestPDFSearch(t *testing.T) {
+	cs := newTestSession(t)
+	text := callOK(t, cs, "pdf_search", map[string]any{
+		"input_path":       "../../testdata/Hello world.pdf",
+		"query":            "hello",
+		"case_insensitive": true,
+	})
+	if strings.Contains(text, "\"count\": 0") || !strings.Contains(text, "\"page\": 1") {
+		t.Fatalf("expected a match on page 1, got: %s", text)
 	}
 }

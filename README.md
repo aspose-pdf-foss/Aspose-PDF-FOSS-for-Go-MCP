@@ -11,10 +11,14 @@ go install github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp@latest
 or build from a checkout:
 
 ```bash
+git clone https://github.com/aspose-pdf-foss/Aspose-PDF-FOSS-for-Go-MCP.git
+cd Aspose-PDF-FOSS-for-Go-MCP
 go build -o aspose-pdf-foss-for-go-mcp .
 ```
 
 On Windows the binary is `aspose-pdf-foss-for-go-mcp.exe`. There are no additional install steps; the server binary is self-contained.
+
+> **Note:** the GitHub repository is named `Aspose-PDF-FOSS-for-Go-MCP`, while the Go module path is all-lowercase `github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp`. GitHub URLs are case-insensitive, so `go install` with the lowercase path works as shown above — always use the lowercase form in Go imports and `go get`/`go install` commands.
 
 ## Tools
 

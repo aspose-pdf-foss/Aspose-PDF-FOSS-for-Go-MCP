@@ -71,7 +71,7 @@ Do not duplicate this logic in individual tool files.
 The PDF library is pinned at:
 
 ```
-github.com/aspose-pdf-foss/aspose-pdf-foss-for-go v0.3.0
+github.com/aspose-pdf-foss/aspose-pdf-foss-for-go v0.4.0
 ```
 
 Consumed via `go get` (no `replace` directive in `go.mod`). Import alias: `pdf`:
@@ -80,7 +80,7 @@ Consumed via `go get` (no `replace` directive in `go.mod`). Import alias: `pdf`:
 import pdf "github.com/aspose-pdf-foss/aspose-pdf-foss-for-go"
 ```
 
-Some advertised features (PDF/A validation/conversion, digital signatures, grayscale, and others listed in the README roadmap) are not present in this release tag. Do not add tools for unreleased library features; wait for a library release that includes them.
+v0.4.0 ships the features behind every item on the README roadmap (PDF/A validation/conversion, digital signatures, grayscale, linearization, imposition, forms data interchange, and more), so tools for them may now be added following the conventions above. Do not add tools for library features that are not present in the pinned release tag.
 
 ## Running tests
 

@@ -1,8 +1,14 @@
 # aspose-pdf-foss-mcp
 
-A stdio MCP server that wraps the [`aspose-pdf-foss-for-go`](https://github.com/aspose-pdf-foss/aspose-pdf-foss-for-go) v0.3.0 PDF library and exposes six PDF tools to any MCP-compatible AI client. It speaks the Model Context Protocol over standard input/output and has no HTTP server, no daemon, and no dependencies beyond the Go standard library and the two declared modules.
+A stdio MCP server that wraps the [`aspose-pdf-foss-for-go`](https://github.com/aspose-pdf-foss/aspose-pdf-foss-for-go) v0.4.0 PDF library and exposes six PDF tools to any MCP-compatible AI client. It speaks the Model Context Protocol over standard input/output and has no HTTP server, no daemon, and no dependencies beyond the Go standard library and the two declared modules.
 
 ## Install / Build
+
+```bash
+go install github.com/aspose-pdf-foss/aspose-pdf-foss-mcp@latest
+```
+
+or build from a checkout:
 
 ```bash
 go build -o aspose-pdf-foss-mcp .
@@ -102,7 +108,7 @@ On Windows use the `.exe` path and forward slashes or escaped back slashes:
 
 ## Roadmap
 
-The following features are planned. Some already exist in the library source but are not yet in a released tag; they will be added to this server once the library ships a release that includes them.
+The following tools are planned. The underlying features all ship in library v0.4.0; the corresponding MCP tools have not been added to this server yet.
 
 - PDF/A validation and conversion
 - Digital signatures

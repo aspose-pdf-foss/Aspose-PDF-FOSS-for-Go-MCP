@@ -2,10 +2,12 @@ module github.com/aspose-pdf-foss/aspose-pdf-foss-mcp
 
 go 1.25.0
 
-require github.com/modelcontextprotocol/go-sdk v1.6.1
+require (
+	github.com/aspose-pdf-foss/aspose-pdf-foss-for-go v0.4.0
+	github.com/modelcontextprotocol/go-sdk v1.6.1
+)
 
 require (
-	github.com/aspose-pdf-foss/aspose-pdf-foss-for-go v0.3.0 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect

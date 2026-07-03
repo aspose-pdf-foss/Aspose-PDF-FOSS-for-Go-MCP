@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp)](https://goreportcard.com/report/github.com/aspose-pdf-foss/aspose-pdf-foss-for-go-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A stdio MCP server that wraps the [`aspose-pdf-foss-for-go`](https://github.com/aspose-pdf-foss/aspose-pdf-foss-for-go) v0.4.0 PDF library and exposes 25 PDF tools to any MCP-compatible AI client. It speaks the Model Context Protocol over standard input/output and has no HTTP server, no daemon, and no dependencies beyond the Go standard library and the two declared modules.
+A stdio MCP server that wraps the [`aspose-pdf-foss-for-go`](https://github.com/aspose-pdf-foss/aspose-pdf-foss-for-go) v0.4.0 PDF library and exposes 30 PDF tools to any MCP-compatible AI client. It speaks the Model Context Protocol over standard input/output and has no HTTP server, no daemon, and no dependencies beyond the Go standard library and the two declared modules.
 
 ## Install / Build
 
@@ -82,6 +82,16 @@ On Windows the binary is `aspose-pdf-foss-for-go-mcp.exe`. There are no addition
 |------|----------------|-----------------|---------|
 | `pdf_watermark` | `input_path`, `output_path`, `text` or `image_path` | `password`, `opacity`, `rotate_angle`, `font_size`, `behind`, `pages` | Writes a watermarked PDF |
 
+### Create & compose
+
+| Tool | Required params | Optional params | Returns |
+|------|----------------|-----------------|---------|
+| `pdf_create` | `output_path` | `page_format` (a4/a3/letter/legal), `landscape`, `page_count`, `width`, `height` | Writes a new blank PDF (A4 portrait, 1 page by default; custom size in points) |
+| `pdf_add_text` | `input_path`, `output_path`, `text` | `password`, `page`, `llx`/`lly`/`urx`/`ury`, `font`, `font_size`, `color`, `halign`, `valign`, `rotation` | Writes a PDF with the text drawn word-wrapped into the rectangle (standard-14 fonts) |
+| `pdf_add_table` | `input_path`, `output_path`, `rows` (array of string arrays) | `password`, `page`, `header_rows`, `column_widths`, `llx`/`lly`/`urx`/`ury`, `font`, `font_size`, `border_width`, `no_borders` | Writes a PDF with the table drawn on the page; long tables continue onto appended pages |
+| `pdf_add_image` | `input_path`, `output_path`, `image_path`, `llx`, `lly`, `urx`, `ury` | `password`, `page` | Writes a PDF with the PNG/JPEG stretched into the rectangle |
+| `pdf_draw` | `input_path`, `output_path`, `shape` (line/rectangle/circle/ellipse) + its coordinates | `password`, `page`, `stroke_color`, `stroke_width`, `no_stroke`, `fill_color`, `dash_pattern` | Writes a PDF with the vector shape drawn on the page |
+
 ### Parameter notes
 
 - **Page numbers are 1-based** everywhere. Page ranges use the syntax `"1-3,5"`.
@@ -92,6 +102,7 @@ On Windows the binary is `aspose-pdf-foss-for-go-mcp.exe`. There are no addition
 - `pdf_fill_form` `values` is an object keyed by full (dotted) field name; use `pdf_form_fields` to discover names. Checkbox values are `On`/`Off`.
 - `pdf_watermark` requires exactly one of `text` or `image_path`. `opacity` defaults to 0.3, `font_size` to 48; `rotate_angle` is degrees counter-clockwise (e.g. 45 for a diagonal watermark); `behind: true` draws under the page content.
 - `pdf_nup`/`pdf_booklet` sheet size defaults: A4 for N-up, twice the source page width for booklet; override with `page_width`/`page_height` (points).
+- The create & compose tools use PDF coordinates: lengths in points (1/72 inch), origin at the page's bottom-left corner, y grows upward. An A4 page is 595 × 842 pt. `pdf_add_text`/`pdf_add_table` default their rectangle to the page minus a 36 pt margin when all four coordinates are omitted; colors are `#RRGGBB` or `#RRGGBBAA`; fonts are the standard-14 PostScript names (`helvetica`, `helvetica-bold`, `times-roman`, `courier`, …).
 
 ## MCP Client Configuration
 
@@ -170,7 +181,7 @@ that the server's user account can access.
 
 ## Roadmap
 
-Possible future tools on top of library features that are already released: change password, reorder pages, add/replace images, outlines and table-of-contents generation, form-data interchange (JSON/FDF/XFDF), annotations, page labels, and tagged-PDF authoring.
+Possible future tools on top of library features that are already released: change password, reorder pages, replace images, outlines and table-of-contents generation, form-data interchange (JSON/FDF/XFDF), annotations, page labels, and tagged-PDF authoring.
 
 ## License
 

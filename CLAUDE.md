@@ -55,6 +55,11 @@ One tool = one file under `internal/tools/`. The file is named after the tool wi
 | `internal/tools/extract_pages.go` | `pdf_extract_pages` |
 | `internal/tools/watermark.go` | `pdf_watermark` |
 | `internal/tools/search.go` | `pdf_search` |
+| `internal/tools/create.go` | `pdf_create` |
+| `internal/tools/add_text.go` | `pdf_add_text` |
+| `internal/tools/add_table.go` | `pdf_add_table` |
+| `internal/tools/add_image.go` | `pdf_add_image` |
+| `internal/tools/draw.go` | `pdf_draw` |
 
 Every tool is registered in `internal/tools/register.go` via `mcp.AddTool`. Do not register tools anywhere else.
 
@@ -83,6 +88,7 @@ Every tool is registered in `internal/tools/register.go` via `mcp.AddTool`. Do n
 | `internal/tools/errors.go` | `openDocument(path, password string) (*pdf.Document, error)` | Opens a PDF, handling the encrypted-but-no-password case with an actionable error message |
 | `internal/tools/pages.go` | `parsePageRange(spec string, total int) ([]int, error)` | Parses a page range string such as `"1-3,5"` into a slice of 1-based page numbers; empty spec means all pages |
 | `internal/tools/pdfa.go` | `parsePDFALevel(level string) (pdf.PDFAFormat, error)` | Maps a level string such as `"pdfa-1b"` to the library's `PDFAFormat` constant |
+| `internal/tools/style.go` | `parseHexColor`, `resolveFont`, `boldVariant`, `parseHAlign`, `parseVAlign`, `parsePageFormat`, `contentRect` | Shared parsing/defaults for the create & compose tools: `#RRGGBB[AA]` colors, standard-14 fonts, alignment and page-format names, and the default content rectangle (page minus 36 pt margin) |
 
 Do not duplicate this logic in individual tool files.
 

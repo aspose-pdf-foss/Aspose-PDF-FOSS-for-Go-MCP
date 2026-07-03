@@ -106,4 +106,24 @@ func Register(server *mcp.Server) {
 		Name:        "pdf_search",
 		Description: "Find text in a PDF (literal or RE2 regex, optionally case-insensitive); returns page numbers and bounding boxes.",
 	}, handleSearch)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "pdf_create",
+		Description: "Create a new blank PDF: a4/a3/letter/legal or a custom size in points, portrait or landscape, N pages.",
+	}, handleCreate)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "pdf_add_text",
+		Description: "Draw text into a rectangle on a page: standard-14 font, size, color, alignment, rotation; word-wraps inside the rectangle.",
+	}, handleAddText)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "pdf_add_table",
+		Description: "Draw a table of text cells on a page: column widths, borders, optional bold header rows; long tables continue onto appended pages.",
+	}, handleAddTable)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "pdf_add_image",
+		Description: "Place a PNG or JPEG image into a rectangle on a page (stretched to fill the rectangle).",
+	}, handleAddImage)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "pdf_draw",
+		Description: "Draw a vector shape on a page: line, rectangle, circle, or ellipse with stroke and optional fill.",
+	}, handleDraw)
 }

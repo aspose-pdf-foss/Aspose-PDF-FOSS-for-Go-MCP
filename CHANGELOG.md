@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- 5 create & compose tools (30 tools total), so an AI client can build a PDF
+  from scratch instead of only transforming existing files — the need surfaced
+  by the AI-editor pillar of the ecosystem:
+  - `pdf_create` — new blank PDF: a4/a3/letter/legal or a custom size in
+    points, portrait or landscape, N pages.
+  - `pdf_add_text` — word-wrapped text in a rectangle: standard-14 font, size,
+    `#RRGGBB[AA]` color, horizontal/vertical alignment, rotation.
+  - `pdf_add_table` — table of text cells: column widths, borders, bold
+    repeating header rows; long tables continue onto auto-appended pages.
+  - `pdf_add_image` — place a PNG/JPEG into a rectangle on a page.
+  - `pdf_draw` — vector shapes (line, rectangle, circle, ellipse) with stroke
+    color/width, dash pattern, and optional fill.
+
 ## [0.2.0] — 2026-07-02
 
 First public release. The server now wraps library v0.4.0 and exposes 25 tools.

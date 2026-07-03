@@ -10,6 +10,8 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"image"
+	"image/png"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -672,4 +674,198 @@ func TestPDFSearch(t *testing.T) {
 	if strings.Contains(text, "\"count\": 0") || !strings.Contains(text, "\"page\": 1") {
 		t.Fatalf("expected a match on page 1, got: %s", text)
 	}
+}
+
+func TestPDFCreate(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "new.pdf")
+	callOK(t, cs, "pdf_create", map[string]any{
+		"output_path": out,
+		"page_format": "letter",
+		"page_count":  3,
+	})
+	text := callOK(t, cs, "pdf_info", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"page_count\": 3") {
+		t.Fatalf("expected page_count 3, got: %s", text)
+	}
+}
+
+func TestPDFCreateCustomLandscape(t *testing.T) {
+	cs := newTestSession(t)
+	out := filepath.Join(t.TempDir(), "wide.pdf")
+	callOK(t, cs, "pdf_create", map[string]any{
+		"output_path": out,
+		"width":       200,
+		"height":      400,
+		"landscape":   true,
+	})
+	text := callOK(t, cs, "pdf_info", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"width\": 400") || !strings.Contains(text, "\"height\": 200") {
+		t.Fatalf("expected a 400x200 page, got: %s", text)
+	}
+}
+
+func TestPDFCreateBadFormat(t *testing.T) {
+	cs := newTestSession(t)
+	callErr(t, cs, "pdf_create", map[string]any{
+		"output_path": filepath.Join(t.TempDir(), "x.pdf"),
+		"page_format": "tabloid",
+	})
+}
+
+func TestPDFAddText(t *testing.T) {
+	cs := newTestSession(t)
+	dir := t.TempDir()
+	src := filepath.Join(dir, "blank.pdf")
+	out := filepath.Join(dir, "text.pdf")
+	callOK(t, cs, "pdf_create", map[string]any{"output_path": src})
+	callOK(t, cs, "pdf_add_text", map[string]any{
+		"input_path":  src,
+		"output_path": out,
+		"text":        "Invoice INV-001",
+		"font":        "helvetica-bold",
+		"font_size":   24,
+		"color":       "#003366",
+		"halign":      "center",
+	})
+	text := callOK(t, cs, "pdf_extract_text", map[string]any{"input_path": out})
+	if !strings.Contains(text, "Invoice INV-001") {
+		t.Fatalf("expected added text in extraction, got: %s", text)
+	}
+}
+
+func TestPDFAddTextUnknownFont(t *testing.T) {
+	cs := newTestSession(t)
+	dir := t.TempDir()
+	src := filepath.Join(dir, "blank.pdf")
+	callOK(t, cs, "pdf_create", map[string]any{"output_path": src})
+	callErr(t, cs, "pdf_add_text", map[string]any{
+		"input_path":  src,
+		"output_path": filepath.Join(dir, "x.pdf"),
+		"text":        "X",
+		"font":        "comic-sans",
+	})
+}
+
+func TestPDFAddTable(t *testing.T) {
+	cs := newTestSession(t)
+	dir := t.TempDir()
+	src := filepath.Join(dir, "blank.pdf")
+	out := filepath.Join(dir, "table.pdf")
+	callOK(t, cs, "pdf_create", map[string]any{"output_path": src})
+	callOK(t, cs, "pdf_add_table", map[string]any{
+		"input_path":  src,
+		"output_path": out,
+		"rows": [][]string{
+			{"Item", "Qty", "Price"},
+			{"Widget", "2", "10.00"},
+			{"Gadget", "1", "25.50"},
+		},
+		"header_rows": 1,
+	})
+	text := callOK(t, cs, "pdf_extract_text", map[string]any{"input_path": out})
+	if !strings.Contains(text, "Widget") || !strings.Contains(text, "25.50") {
+		t.Fatalf("expected table cells in extraction, got: %s", text)
+	}
+}
+
+func TestPDFAddTableRaggedRows(t *testing.T) {
+	cs := newTestSession(t)
+	dir := t.TempDir()
+	src := filepath.Join(dir, "blank.pdf")
+	callOK(t, cs, "pdf_create", map[string]any{"output_path": src})
+	callErr(t, cs, "pdf_add_table", map[string]any{
+		"input_path":  src,
+		"output_path": filepath.Join(dir, "x.pdf"),
+		"rows":        [][]string{{"a", "b"}, {"c"}},
+	})
+}
+
+// makeTestPNG writes a small opaque PNG and returns its path.
+func makeTestPNG(t *testing.T, dir string) string {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, 8, 8))
+	for i := range img.Pix {
+		img.Pix[i] = 0xff
+	}
+	path := filepath.Join(dir, "pixel.png")
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatalf("create png: %v", err)
+	}
+	defer f.Close()
+	if err := png.Encode(f, img); err != nil {
+		t.Fatalf("encode png: %v", err)
+	}
+	return path
+}
+
+func TestPDFAddImage(t *testing.T) {
+	cs := newTestSession(t)
+	dir := t.TempDir()
+	src := filepath.Join(dir, "blank.pdf")
+	out := filepath.Join(dir, "image.pdf")
+	callOK(t, cs, "pdf_create", map[string]any{"output_path": src})
+	callOK(t, cs, "pdf_add_image", map[string]any{
+		"input_path":  src,
+		"output_path": out,
+		"image_path":  makeTestPNG(t, dir),
+		"llx":         100,
+		"lly":         600,
+		"urx":         200,
+		"ury":         700,
+	})
+	imgDir := filepath.Join(dir, "extracted")
+	text := callOK(t, cs, "pdf_extract_images", map[string]any{
+		"input_path": out,
+		"output_dir": imgDir,
+	})
+	if strings.Contains(text, "\"count\": 0") {
+		t.Fatalf("expected the placed image to be extracted, got: %s", text)
+	}
+}
+
+func TestPDFDraw(t *testing.T) {
+	cs := newTestSession(t)
+	dir := t.TempDir()
+	src := filepath.Join(dir, "blank.pdf")
+	out := filepath.Join(dir, "drawn.pdf")
+	callOK(t, cs, "pdf_create", map[string]any{"output_path": src})
+	callOK(t, cs, "pdf_draw", map[string]any{
+		"input_path":  src,
+		"output_path": out,
+		"shape":       "rectangle",
+		"llx":         50,
+		"lly":         50,
+		"urx":         250,
+		"ury":         150,
+		"fill_color":  "#ffcc00",
+	})
+	callOK(t, cs, "pdf_draw", map[string]any{
+		"input_path":   out,
+		"output_path":  out,
+		"shape":        "line",
+		"x1":           50,
+		"y1":           40,
+		"x2":           250,
+		"y2":           40,
+		"stroke_width": 2,
+		"dash_pattern": []float64{3, 2},
+	})
+	text := callOK(t, cs, "pdf_validate", map[string]any{"input_path": out})
+	if !strings.Contains(text, "\"valid\": true") {
+		t.Fatalf("expected the drawn PDF to validate, got: %s", text)
+	}
+}
+
+func TestPDFDrawBadShape(t *testing.T) {
+	cs := newTestSession(t)
+	dir := t.TempDir()
+	src := filepath.Join(dir, "blank.pdf")
+	callOK(t, cs, "pdf_create", map[string]any{"output_path": src})
+	callErr(t, cs, "pdf_draw", map[string]any{
+		"input_path":  src,
+		"output_path": filepath.Join(dir, "x.pdf"),
+		"shape":       "triangle",
+	})
 }
